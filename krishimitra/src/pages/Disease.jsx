@@ -151,7 +151,7 @@ export default function Disease() {
     runAnalysis(sample);
   };
 
-  const runAnalysis = (customSample = null) => {
+  const runAnalysis = async (customSample = null) => {
     setScanning(true);
     setProgress(15);
     setDiagnosis(null);
@@ -162,18 +162,49 @@ export default function Disease() {
           clearInterval(interval);
           return 90;
         }
-        return prev + 25;
+        return prev + 20;
       });
     }, 250);
 
-    setTimeout(() => {
+    try {
+      const formData = new FormData();
+      if (customSample) {
+        formData.append("sampleId", customSample.id);
+      } else if (selectedFile) {
+        formData.append("file", selectedFile);
+      } else {
+        throw new Error("No image or sample selected");
+      }
+
+      const response = await fetch("http://localhost:8000/predict-disease", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Disease detection request failed");
+      }
+
+      const result = await response.json();
       clearInterval(interval);
       setProgress(100);
-      setScanning(false);
-      // If custom sample is provided use it, else pick randomly or based on file
-      const result = customSample || SAMPLE_DISEASES[0];
       setDiagnosis(result);
-    }, 1200);
+    } catch (error) {
+      console.error(error);
+      clearInterval(interval);
+      setProgress(100);
+      setDiagnosis({
+        crop: { hi: "त्रुटि", en: "Error" },
+        name: { hi: "रोग पता नहीं चला", en: "Disease detection failed" },
+        severity: "Unknown",
+        symptoms: [error.message],
+        organicRemedy: { hi: "कृपया बाद में पुनः प्रयास करें।", en: "Please try again later." },
+        chemicalRemedy: { hi: "आगामी समय में फिर से प्रयास करें।", en: "Please try again later." },
+        prevention: { hi: "सुनिश्चित करें कि बैकएंड चल रहा है।", en: "Ensure the backend is running." },
+      });
+    } finally {
+      setScanning(false);
+    }
   };
 
   return (

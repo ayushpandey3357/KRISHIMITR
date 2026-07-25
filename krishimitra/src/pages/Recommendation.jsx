@@ -24,139 +24,51 @@ export default function Recommendation() {
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState(null);
 
-  const handleRecommend = (e) => {
+  const handleRecommend = async (e) => {
     e.preventDefault();
     setLoading(true);
     setRecommendations(null);
 
-    setTimeout(() => {
-      const n = Number(nitrogen);
-      const p = Number(phosphorus);
-      const k = Number(potassium);
+    try {
+      const formData = new FormData();
+      formData.append("season", season);
+      formData.append("soilType", soilType);
+      formData.append("nitrogen", nitrogen);
+      formData.append("phosphorus", phosphorus);
+      formData.append("potassium", potassium);
+      formData.append("ph", ph);
 
-      let cropList = [];
+      const response = await fetch("http://localhost:8000/recommend-crop", {
+        method: "POST",
+        body: formData,
+      });
 
-      if (season === "Kharif") {
-        if (n > 80 && p > 35) {
-          cropList = [
-            {
-              name: { hi: "धान / चावल (Rice/Paddy)", en: "Paddy (Rice)" },
-              icon: "🌾",
-              match: 96,
-              yieldPerAcre: "22-26 Quintal",
-              waterReq: { hi: "उच्च (1200-1400 mm)", en: "High (1200-1400 mm)" },
-              npkRatio: "120:60:40 kg/ha",
-              profitScore: "High ⭐⭐⭐⭐⭐",
-              desc: {
-                hi: "आपकी मिट्टी में नाइट्रोजन एवं फास्फोरस की अच्छी मात्रा धान की उच्च पैदावार के लिए आदर्श है।",
-                en: "High nitrogen and phosphorus content in your soil is optimal for high paddy yields.",
-              },
-            },
-            {
-              name: { hi: "मक्का (Maize)", en: "Maize (Corn)" },
-              icon: "🌽",
-              match: 89,
-              yieldPerAcre: "18-22 Quintal",
-              waterReq: { hi: "मध्यम (500-600 mm)", en: "Medium (500-600 mm)" },
-              npkRatio: "100:50:30 kg/ha",
-              profitScore: "Very High ⭐⭐⭐⭐⭐",
-              desc: {
-                hi: "मक्का दोमट एवं जलोढ़ मिट्टी में उत्कृष्ट व्यावसायिक लाभ प्रदान करता है।",
-                en: "Maize offers excellent commercial returns in loam and alluvial soils.",
-              },
-            },
-            {
-              name: { hi: "कपास (Cotton)", en: "Cotton" },
-              icon: "☁️",
-              match: 82,
-              yieldPerAcre: "10-14 Quintal",
-              waterReq: { hi: "मध्यम (600-800 mm)", en: "Medium (600-800 mm)" },
-              npkRatio: "90:45:45 kg/ha",
-              profitScore: "High ⭐⭐⭐⭐",
-              desc: {
-                hi: "काली या दोमट मिट्टी में उच्च पोटेशियम के साथ कपास की अच्छी उपज होती है।",
-                en: "Good cotton yields with balanced potassium in black or loamy soil.",
-              },
-            },
-          ];
-        } else {
-          cropList = [
-            {
-              name: { hi: "अरहर / तूर (Pigeon Pea)", en: "Pigeon Pea (Arhar)" },
-              icon: "🫘",
-              match: 94,
-              yieldPerAcre: "8-12 Quintal",
-              waterReq: { hi: "कम (350-450 mm)", en: "Low (350-450 mm)" },
-              npkRatio: "20:50:20 kg/ha",
-              profitScore: "Very High ⭐⭐⭐⭐⭐",
-              desc: {
-                hi: "दलहनी फसल अरहर वायुमंडलीय नाइट्रोजन स्थिरीकरण करती है और कम उर्वरक में अच्छा लाभ देती है।",
-                en: "Leguminous crop fixing nitrogen naturally, ideal for lower fertilizer inputs.",
-              },
-            },
-            {
-              name: { hi: "बाजरा (Pearl Millet)", en: "Pearl Millet (Bajra)" },
-              icon: "🌾",
-              match: 88,
-              yieldPerAcre: "12-15 Quintal",
-              waterReq: { hi: "बहुत कम (250-350 mm)", en: "Very Low (250-350 mm)" },
-              npkRatio: "60:30:20 kg/ha",
-              profitScore: "High ⭐⭐⭐⭐",
-              desc: {
-                hi: "कम बारिश और कम उपजाऊ मिट्टी के लिए सबसे टिकाऊ विकल्प।",
-                en: "Most resilient crop for low rainfall and moderate soil fertility.",
-              },
-            },
-          ];
-        }
-      } else {
-        // Rabi
-        cropList = [
-          {
-            name: { hi: "गेहूँ (Wheat)", en: "Wheat" },
-            icon: "🌾",
-            match: 95,
-            yieldPerAcre: "20-24 Quintal",
-            waterReq: { hi: "मध्यम (450-550 mm)", en: "Medium (450-550 mm)" },
-            npkRatio: "120:60:40 kg/ha",
-            profitScore: "Very High ⭐⭐⭐⭐⭐",
-            desc: {
-              hi: "रबी की मुख्य फसल। उत्तम तापमान और नाइट्रोजन स्तर के कारण बम्पर पैदावार संभव।",
-              en: "Premier Rabi cereal. Optimal temperature & nitrogen promises bumper yields.",
-            },
-          },
-          {
-            name: { hi: "सरसों (Mustard)", en: "Mustard" },
-            icon: "🌼",
-            match: 91,
-            yieldPerAcre: "8-11 Quintal",
-            waterReq: { hi: "कम (250-350 mm)", en: "Low (250-350 mm)" },
-            npkRatio: "80:40:40 kg/ha",
-            profitScore: "High ⭐⭐⭐⭐⭐",
-            desc: {
-              hi: "तेलहन फसल जो कम सिंचाई में उत्कृष्ट बाजार मूल्य और लाभ देती है।",
-              en: "High-value oilseed crop yielding strong market returns with minimal irrigation.",
-            },
-          },
-          {
-            name: { hi: "चना (Chickpea)", en: "Chickpea (Gram)" },
-            icon: "🫘",
-            match: 86,
-            yieldPerAcre: "10-14 Quintal",
-            waterReq: { hi: "कम (250-300 mm)", en: "Low (250-300 mm)" },
-            npkRatio: "20:50:20 kg/ha",
-            profitScore: "High ⭐⭐⭐⭐",
-            desc: {
-              hi: "मिट्टी के स्वास्थ्य में सुधार करने वाली एवं कम पानी में उगने वाली रबी दाल।",
-              en: "Soil-enriching legume crop thriving under minimal watering.",
-            },
-          },
-        ];
+      if (!response.ok) {
+        throw new Error("Crop recommendation request failed");
       }
 
-      setRecommendations(cropList);
+      const data = await response.json();
+      setRecommendations(data.recommendations || []);
+    } catch (error) {
+      console.error(error);
+      setRecommendations([
+        {
+          name: { hi: "त्रुटि", en: "Error" },
+          icon: "⚠️",
+          match: 0,
+          yieldPerAcre: "N/A",
+          waterReq: { hi: "N/A", en: "N/A" },
+          npkRatio: "N/A",
+          profitScore: "N/A",
+          desc: {
+            hi: "कृपया सुनिश्चित करें कि बैकएंड चल रहा है।",
+            en: "Please make sure the backend is running.",
+          },
+        },
+      ]);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -338,6 +250,21 @@ export default function Recommendation() {
                       <div className="bg-emerald-600 text-white px-3.5 py-1.5 rounded-2xl font-extrabold text-sm shadow-xs">
                         {crop.match}% {lang === "hi" ? "उपयुक्त" : "Match"}
                       </div>
+                    </div>
+ 
+                    <div className="flex flex-wrap gap-2 items-center mb-3">
+                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                        {lang === "hi" ? "बाजार स्कोर" : "Market Score"}:
+                      </span>
+                      <span className="text-sm font-bold text-indigo-800 bg-indigo-100 px-2 py-1 rounded-full">
+                        {crop.marketScore ?? "N/A"}
+                      </span>
+                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                        {lang === "hi" ? "अनुमानित बाजार मूल्य" : "Est. Price"}:
+                      </span>
+                      <span className="text-sm font-bold text-emerald-800 bg-emerald-100 px-2 py-1 rounded-full">
+                        ₹{crop.predictedMarketPrice ?? "N/A"}
+                      </span>
                     </div>
 
                     <p className="text-sm text-slate-600 mb-4 leading-relaxed font-medium">

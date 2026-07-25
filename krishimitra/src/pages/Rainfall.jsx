@@ -22,57 +22,94 @@ export default function Rainfall() {
   const [wind, setWind] = useState(14);
 
   const [loading, setLoading] = useState(false);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState(null);
+  const [weatherSource, setWeatherSource] = useState(null);
   const [result, setResult] = useState(null);
 
-  const handlePredict = (e) => {
+  const translateDay = (day) => {
+    if (lang !== "hi") return day;
+    return {
+      Today: "आज",
+      Tomorrow: "कल",
+      "Day 3": "दिन 3",
+      "Day 4": "दिन 4",
+      "Day 5": "दिन 5",
+    }[day] || day;
+  };
+
+  const fetchLiveWeather = async () => {
+    setWeatherLoading(true);
+    setWeatherError(null);
+    setWeatherSource(null);
+
+    try {
+      const response = await fetch(`http://localhost:8000/weather?region=${encodeURIComponent(region)}`);
+      if (!response.ok) {
+        throw new Error("Live weather request failed");
+      }
+      const data = await response.json();
+      setTemp(data.temperature ?? temp);
+      setHumidity(data.humidity ?? humidity);
+      setPressure(data.pressure ?? pressure);
+      setWind(data.wind ?? wind);
+      setWeatherSource(data.source || "Open-Meteo");
+    } catch (error) {
+      console.error(error);
+      setWeatherError(
+        lang === "hi"
+          ? "लाइव मौसम डेटा लाने में त्रुटि। बाद में पुनः प्रयास करें।"
+          : "Failed to load live weather data. Please try again later."
+      );
+    } finally {
+      setWeatherLoading(false);
+    }
+  };
+
+  const handlePredict = async (e) => {
     e.preventDefault();
     setLoading(true);
     setResult(null);
 
-    setTimeout(() => {
-      // Intelligent rule simulation based on inputs
-      const humVal = Number(humidity);
-      const tempVal = Number(temp);
-      const pressVal = Number(pressure);
+    try {
+      const formData = new FormData();
+      formData.append("region", region);
+      formData.append("season", season);
+      formData.append("temp", temp);
+      formData.append("humidity", humidity);
+      formData.append("pressure", pressure);
+      formData.append("wind", wind);
 
-      let probability = Math.min(
-        98,
-        Math.max(10, Math.round(humVal * 0.9 + (1020 - pressVal) * 1.5 - tempVal * 0.2))
-      );
+      const response = await fetch("http://localhost:8000/predict-rainfall", {
+        method: "POST",
+        body: formData,
+      });
 
-      let volume = Math.round((probability / 100) * 45 + Math.random() * 10);
-      let alertLevel = probability > 75 ? "High" : probability > 45 ? "Moderate" : "Low";
-
-      let recommendationHi = "";
-      let recommendationEn = "";
-
-      if (probability > 75) {
-        recommendationHi = "भारी बारिश की संभावना! खेत में पानी निकासी (Drainage) का प्रबंधन करें और कीटनाशक छिड़काव स्थगित करें।";
-        recommendationEn = "High chance of heavy rain! Manage field drainage and defer chemical spraying.";
-      } else if (probability > 40) {
-        recommendationHi = "हल्की से मध्यम बारिश की संभावना। सामान्य सिंचाई करें और नमी का ध्यान रखें।";
-        recommendationEn = "Moderate rain expected. Proceed with light irrigation and monitor moisture.";
-      } else {
-        recommendationHi = "बारिश की संभावना कम है। फसलों के लिए कृत्रिम सिंचाई (Irrigation) की योजना बनाएं।";
-        recommendationEn = "Low rain probability. Plan artificial irrigation for your crops.";
+      if (!response.ok) {
+        throw new Error("Rainfall prediction request failed");
       }
 
+      const data = await response.json();
+      setResult(data);
+    } catch (error) {
+      console.error(error);
       setResult({
-        probability,
-        volume,
-        alertLevel,
-        recommendationHi,
-        recommendationEn,
+        probability: 0,
+        volume: 0,
+        alertLevel: "Error",
+        recommendationHi: "कृपया सुनिश्चित करें कि बैकएंड चल रहा है।",
+        recommendationEn: "Please make sure the backend is running.",
         forecast: [
-          { day: lang === "hi" ? "आज" : "Today", temp: `${tempVal}°C`, condition: probability > 60 ? "🌧️ Rain" : "⛅ Cloudy", rainChance: `${probability}%` },
-          { day: lang === "hi" ? "कल" : "Tomorrow", temp: `${tempVal - 1}°C`, condition: "🌧️ Showers", rainChance: `${Math.min(95, probability + 10)}%` },
-          { day: lang === "hi" ? "दिन 3" : "Day 3", temp: `${tempVal - 2}°C`, condition: "⛈️ Thunderstorm", rainChance: `${Math.min(90, probability + 5)}%` },
-          { day: lang === "hi" ? "दिन 4" : "Day 4", temp: `${tempVal + 1}°C`, condition: "⛅ Partly Cloudy", rainChance: "35%" },
-          { day: lang === "hi" ? "दिन 5" : "Day 5", temp: `${tempVal + 2}°C`, condition: "☀️ Sunny", rainChance: "15%" },
+          { day: lang === "hi" ? "आज" : "Today", temp: "N/A", condition: "N/A", rainChance: "N/A" },
+          { day: lang === "hi" ? "कल" : "Tomorrow", temp: "N/A", condition: "N/A", rainChance: "N/A" },
+          { day: lang === "hi" ? "दिन 3" : "Day 3", temp: "N/A", condition: "N/A", rainChance: "N/A" },
+          { day: lang === "hi" ? "दिन 4" : "Day 4", temp: "N/A", condition: "N/A", rainChance: "N/A" },
+          { day: lang === "hi" ? "दिन 5" : "Day 5", temp: "N/A", condition: "N/A", rainChance: "N/A" },
         ],
       });
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -113,7 +150,11 @@ export default function Rainfall() {
                 </label>
                 <select
                   value={region}
-                  onChange={(e) => setRegion(e.target.value)}
+                  onChange={(e) => {
+                    setRegion(e.target.value);
+                    setWeatherSource(null);
+                    setWeatherError(null);
+                  }}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 >
                   {SAMPLE_REGIONS.map((r, idx) => (
@@ -123,7 +164,31 @@ export default function Rainfall() {
                   ))}
                 </select>
               </div>
-
+              <div className="flex flex-col sm:flex-row gap-3 items-start">
+                <button
+                  type="button"
+                  onClick={fetchLiveWeather}
+                  disabled={weatherLoading}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-3 text-sm transition"
+                >
+                  {weatherLoading ? (
+                    <span>{lang === "hi" ? "लोड हो रहा है..." : "Loading..."}</span>
+                  ) : (
+                    <span>{lang === "hi" ? "लाइव मौसम प्राप्त करें" : "Fetch Live Weather"}</span>
+                  )}
+                </button>
+                {weatherSource ? (
+                  <p className="text-xs text-slate-500 mt-2 sm:mt-0">
+                    {lang === "hi" ? "स्रोत:" : "Source:"} {weatherSource}
+                  </p>
+                ) : null}
+              </div>
+              {weatherError ? (
+                <p className="text-xs text-red-600 font-semibold">
+                  {weatherError}
+                </p>
+              ) : null}
+ 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
@@ -273,7 +338,7 @@ export default function Rainfall() {
                         key={i}
                         className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl text-center hover:bg-blue-50/50 hover:border-blue-200 transition"
                       >
-                        <p className="text-xs font-bold text-slate-600 mb-1">{fc.day}</p>
+                        <p className="text-xs font-bold text-slate-600 mb-1">{translateDay(fc.day)}</p>
                         <p className="text-xl my-1">{fc.condition.split(" ")[0]}</p>
                         <p className="text-xs font-extrabold text-slate-800">{fc.temp}</p>
                         <p className="text-[11px] font-bold text-blue-600 mt-1">{fc.rainChance}</p>
