@@ -1,6 +1,7 @@
 fastapi
 uvicorn[standard]
-tensorflow
+torch
+torchvision
 pillow
 numpy
 pandas

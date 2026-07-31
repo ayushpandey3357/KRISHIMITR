@@ -188,7 +188,12 @@ export default function Disease() {
       const result = await response.json();
       clearInterval(interval);
       setProgress(100);
-      setDiagnosis(result);
+      // Backend does not return bgGradient — look it up from SAMPLE_DISEASES
+      const matched = SAMPLE_DISEASES.find((s) => s.id === result.class);
+      setDiagnosis({
+        ...result,
+        bgGradient: result.bgGradient || (matched ? matched.bgGradient : "from-slate-600 to-slate-700"),
+      });
     } catch (error) {
       console.error(error);
       clearInterval(interval);
@@ -197,7 +202,11 @@ export default function Disease() {
         crop: { hi: "त्रुटि", en: "Error" },
         name: { hi: "रोग पता नहीं चला", en: "Disease detection failed" },
         severity: "Unknown",
-        symptoms: [error.message],
+        bgGradient: "from-slate-600 to-slate-700",
+        symptoms: {
+          hi: [error.message || "अज्ञात त्रुटि"],
+          en: [error.message || "Unknown error"],
+        },
         organicRemedy: { hi: "कृपया बाद में पुनः प्रयास करें।", en: "Please try again later." },
         chemicalRemedy: { hi: "आगामी समय में फिर से प्रयास करें।", en: "Please try again later." },
         prevention: { hi: "सुनिश्चित करें कि बैकएंड चल रहा है।", en: "Ensure the backend is running." },
