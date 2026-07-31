@@ -38,6 +38,11 @@ app.add_middleware(
 )
 
 
+@app.get("/")
+def read_root():
+    return {"status": "ok", "message": "KrishiMitr AI Backend API is running"}
+
+
 class CropDiseaseNet(nn.Module):
     """PyTorch CNN matching the original Keras architecture."""
 
