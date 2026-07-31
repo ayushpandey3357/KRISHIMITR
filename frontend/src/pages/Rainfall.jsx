@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Navbar from "../components/Navbar";
 import { useLanguage } from "../context/LanguageContext";
+import { API_BASE_URL } from "../config/api";
 
 const SAMPLE_REGIONS = [
   { hi: "उत्तर प्रदेश (गंगीय क्षेत्र)", en: "Uttar Pradesh (Gangetic Plain)" },
@@ -44,7 +45,7 @@ export default function Rainfall() {
     setWeatherSource(null);
 
     try {
-      const response = await fetch(`http://localhost:8000/weather?region=${encodeURIComponent(region)}`);
+      const response = await fetch(`${API_BASE_URL}/weather?region=${encodeURIComponent(region)}`);
       if (!response.ok) {
         throw new Error("Live weather request failed");
       }
@@ -80,7 +81,7 @@ export default function Rainfall() {
       formData.append("pressure", pressure);
       formData.append("wind", wind);
 
-      const response = await fetch("http://localhost:8000/predict-rainfall", {
+      const response = await fetch(`${API_BASE_URL}/predict-rainfall`, {
         method: "POST",
         body: formData,
       });

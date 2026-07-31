@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Navbar from "../components/Navbar";
 import { useLanguage } from "../context/LanguageContext";
+import { API_BASE_URL } from "../config/api";
 
 const SOIL_TYPES = [
   { hi: "दोमट मिट्टी (Loam Soil)", en: "Loam Soil" },
@@ -38,7 +39,7 @@ export default function Recommendation() {
       formData.append("potassium", potassium);
       formData.append("ph", ph);
 
-      const response = await fetch("http://localhost:8000/recommend-crop", {
+      const response = await fetch(`${API_BASE_URL}/recommend-crop`, {
         method: "POST",
         body: formData,
       });

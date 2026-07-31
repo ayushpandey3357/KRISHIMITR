@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { useLanguage } from "../context/LanguageContext";
+import { API_BASE_URL } from "../config/api";
 
 const SAMPLE_DISEASES = [
   {
@@ -176,7 +177,7 @@ export default function Disease() {
         throw new Error("No image or sample selected");
       }
 
-      const response = await fetch("http://localhost:8000/predict-disease", {
+      const response = await fetch(`${API_BASE_URL}/predict-disease`, {
         method: "POST",
         body: formData,
       });

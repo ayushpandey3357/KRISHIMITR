@@ -63,7 +63,8 @@ def main():
     model.fit(X_train, y_train)
     score = model.score(X_test, y_test)
 
-    joblib.dump(model, MODEL_PATH)
+    os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
+    joblib.dump(model, MODEL_PATH, compress=3)
     print(f"Saved market model to {MODEL_PATH}. Test R^2 score: {score:.3f}")
 
 

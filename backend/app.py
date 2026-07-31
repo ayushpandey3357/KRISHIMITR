@@ -23,9 +23,15 @@ RAINFALL_MODEL_PATH = os.path.join(BASE_DIR, "models", "rainfall_model.joblib")
 
 app = FastAPI(title="KrishiMitra AI Backend")
 
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS")
+if allowed_origins_env:
+    allowed_origins = [o.strip() for o in allowed_origins_env.split(",")]
+else:
+    allowed_origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if os.getenv("DEBUG") else ["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -83,17 +89,25 @@ def load_disease_model() -> Optional[CropDiseaseNet]:
 
 def load_market_model():
     if not os.path.exists(MARKET_MODEL_PATH):
-        raise FileNotFoundError(
-            f"Market model not found at {MARKET_MODEL_PATH}. Run backend/train_market_model.py to generate it."
-        )
+        print(f"Market model not found at {MARKET_MODEL_PATH}. Auto-training market model...")
+        try:
+            from backend.train_market_model import main as train_market
+            train_market()
+        except Exception as e:
+            print(f"Error auto-training market model: {e}")
+            raise FileNotFoundError(f"Market model not found and auto-training failed: {e}")
     return joblib.load(MARKET_MODEL_PATH)
 
 
 def load_rainfall_model():
     if not os.path.exists(RAINFALL_MODEL_PATH):
-        raise FileNotFoundError(
-            f"Rainfall model not found at {RAINFALL_MODEL_PATH}. Run backend/train_rainfall_model.py to generate it."
-        )
+        print(f"Rainfall model not found at {RAINFALL_MODEL_PATH}. Auto-training rainfall model...")
+        try:
+            from backend.train_rainfall_model import main as train_rainfall
+            train_rainfall()
+        except Exception as e:
+            print(f"Error auto-training rainfall model: {e}")
+            raise FileNotFoundError(f"Rainfall model not found and auto-training failed: {e}")
     return joblib.load(RAINFALL_MODEL_PATH)
 
 
@@ -533,3 +547,10 @@ def recommend_crop(
     crop_scores.sort(key=lambda item: item[1], reverse=True)
     recommendations = [format_recommendation(crop, score, predicted_price) for crop, score, predicted_price in crop_scores[:5]]
     return {"recommendations": recommendations}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("backend.app:app", host="0.0.0.0", port=port)
+
