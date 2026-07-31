@@ -79,7 +79,7 @@ def make_synthetic_data():
 
 def train_model(X, y):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    model = RandomForestRegressor(n_estimators=200, random_state=42)
+    model = RandomForestRegressor(n_estimators=30, max_depth=10, random_state=42)
     model.fit(X_train, y_train)
     score = model.score(X_test, y_test)
     return model, score
@@ -107,7 +107,7 @@ def main():
 
     model, score = train_model(X, y)
     os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
-    joblib.dump(model, MODEL_PATH)
+    joblib.dump(model, MODEL_PATH, compress=3)
     print(f"Saved rainfall model to {MODEL_PATH}. Test R^2 score: {score:.3f}")
 
 

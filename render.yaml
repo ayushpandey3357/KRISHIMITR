@@ -3,7 +3,7 @@ services:
   - type: web
     name: krishimitr-backend
     env: python
-    buildCommand: pip install -r backend/requirements.txt
+    buildCommand: pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu && pip install -r backend/requirements.txt
     startCommand: python -m backend.app
     envVars:
       - key: ALLOWED_ORIGINS
