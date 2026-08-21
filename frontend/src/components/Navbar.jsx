@@ -1,13 +1,39 @@
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
+import { API_BASE_URL } from "../config/api";
 
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { lang, toggleLanguage, t } = useLanguage();
   const farmerName = localStorage.getItem("farmerName") || "Farmer";
+  const [backendStatus, setBackendStatus] = useState("checking"); // 'online' | 'waking' | 'offline' | 'checking'
+
+  useEffect(() => {
+    let isMounted = true;
+    const checkBackend = async () => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        const res = await fetch(`${API_BASE_URL}/health`, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (res.ok && isMounted) {
+          setBackendStatus("online");
+        } else if (isMounted) {
+          setBackendStatus("waking");
+        }
+      } catch (err) {
+        if (isMounted) {
+          setBackendStatus("waking");
+        }
+      }
+    };
+    checkBackend();
+  }, []);
 
   const isActive = (path) => location.pathname === path;
+
 
   return (
     <nav className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-emerald-100 shadow-xs px-6 py-3.5 flex justify-between items-center transition-all">
@@ -75,6 +101,25 @@ export default function Navbar() {
 
       {/* Right Controls */}
       <div className="flex items-center gap-3">
+        {/* Backend status indicator */}
+        <div
+          className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded-xl border transition ${
+            backendStatus === "online"
+              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+              : backendStatus === "waking"
+              ? "bg-amber-50 text-amber-800 border-amber-200 animate-pulse"
+              : "bg-slate-50 text-slate-600 border-slate-200"
+          }`}
+          title={
+            backendStatus === "online"
+              ? "Backend API Connected"
+              : "Backend sleeping on Render free tier (~30-50s cold start)"
+          }
+        >
+          <span className={`w-2 h-2 rounded-full ${backendStatus === "online" ? "bg-emerald-500" : "bg-amber-500"}`}></span>
+          <span>{backendStatus === "online" ? "API Live" : "Waking AI..."}</span>
+        </div>
+
         {/* Language Toggle Button */}
         <button
           onClick={toggleLanguage}

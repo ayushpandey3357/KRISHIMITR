@@ -13,8 +13,16 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 
-from backend.recommendation_data import CROP_CATALOG, format_recommendation, SEASONS, SOIL_TYPES
-from backend.weather_data import WEATHER_COORDINATES, WEATHER_REGIONS, WEATHER_SEASONS
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+try:
+    from backend.recommendation_data import CROP_CATALOG, format_recommendation, SEASONS, SOIL_TYPES
+    from backend.weather_data import WEATHER_COORDINATES, WEATHER_REGIONS, WEATHER_SEASONS
+except ModuleNotFoundError:
+    from recommendation_data import CROP_CATALOG, format_recommendation, SEASONS, SOIL_TYPES
+    from weather_data import WEATHER_COORDINATES, WEATHER_REGIONS, WEATHER_SEASONS
 
 BASE_DIR = os.path.dirname(__file__)
 MODEL_PATH = os.path.join(BASE_DIR, "models", "crop_disease_model.pt")
@@ -25,13 +33,13 @@ app = FastAPI(title="KrishiMitra AI Backend")
 
 allowed_origins_env = os.getenv("ALLOWED_ORIGINS")
 if allowed_origins_env:
-    allowed_origins = [o.strip() for o in allowed_origins_env.split(",")]
+    allowed_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
 else:
     allowed_origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=allowed_origins if allowed_origins else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -39,8 +47,10 @@ app.add_middleware(
 
 
 @app.get("/")
+@app.get("/health")
 def read_root():
     return {"status": "ok", "message": "KrishiMitr AI Backend API is running"}
+
 
 
 class CropDiseaseNet(nn.Module):
