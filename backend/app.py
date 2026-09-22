@@ -26,6 +26,19 @@ except ModuleNotFoundError:
     from weather_data import WEATHER_COORDINATES, WEATHER_REGIONS, WEATHER_SEASONS
 
 BASE_DIR = os.path.dirname(__file__)
+
+def load_env_file(filepath):
+    if os.path.exists(filepath):
+        with open(filepath, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    os.environ.setdefault(k.strip(), v.strip().strip("\"'"))
+
+load_env_file(os.path.join(BASE_DIR, "..", ".env"))
+load_env_file(os.path.join(BASE_DIR, ".env"))
+
 MODEL_PATH = os.path.join(BASE_DIR, "models", "crop_disease_model.pt")
 MARKET_MODEL_PATH = os.path.join(BASE_DIR, "models", "market_model.joblib")
 RAINFALL_MODEL_PATH = os.path.join(BASE_DIR, "models", "rainfall_model.joblib")
@@ -581,51 +594,51 @@ def ask_krishak(req: AskKrishakRequest):
     groq_api_key = os.getenv("GROQ_API_KEY")
 
     if groq_api_key:
-        try:
-            sys_prompt = (
-                "आप कृषि-मित्र (KrishiMitr) के AI कृषक हैं - भारतीय किसानों के लिए एक विशेष कृषि AI सहायक।\n"
-                "आपका कार्य केवल कृषि, फसल प्रबंधन, फसल रोग, मृदा स्वास्थ्य, खाद एवं उर्वरक, सिंचाई, मौसम सुरक्षा और सरकारी कृषि योजनाओं (जैसे PM-KISAN) से जुड़े प्रश्नों का उत्तर देना है।\n"
-                "सख्त नियम:\n"
-                "1. केवल कृषि, फसल, मौसम और किसान योजनाओं से संबंधित प्रश्नों का ही उत्तर दें।\n"
-                "2. यदि प्रश्न कृषि या खेती से बाहर (out of context / out of domain) है (जैसे कोडिंग, फिल्में, खेल, सामान्य ज्ञान, राजनीति आदि), तो केवल यह कहें:\n"
-                "   'क्षमा करें, मुझे इस प्रश्न की जानकारी नहीं है। मैं केवल कृषि, फसल, मौसम और कृषि योजनाओं से संबंधित प्रश्नों का उत्तर दे सकता हूँ।'\n"
-                "3. कृषि से संबंधित उत्तरों को 3-4 संक्षिप्त वाक्यों में दें।"
-                if lang == "hi"
-                else
-                "You are AI Krishak from KrishiMitr - an expert agricultural AI assistant for Indian farmers.\n"
-                "Your domain is strictly limited to agriculture, farming, crop management, plant diseases, soil health, fertilizers, irrigation, weather precautions, livestock, and government farming schemes (like PM-KISAN).\n"
-                "Strict Rules:\n"
-                "1. Answer ONLY questions related to agriculture, farming, crops, soil, weather, fertilizers, and agricultural government schemes.\n"
-                "2. If the user's question is OUT OF CONTEXT or OUT OF DOMAIN (e.g., coding, movies, history, sports, politics, general trivia, non-farming topics), strictly respond:\n"
-                "   'I don't know based on the agricultural context. As AI Krishak, I can only answer questions related to agriculture, crops, weather, soil health, and farming schemes.'\n"
-                "3. Keep valid agricultural answers concise (3-4 sentences) and easy to understand."
-            )
+        sys_prompt = (
+            "आप कृषि-मित्र (KrishiMitr) के AI कृषक हैं - भारतीय किसानों के लिए एक विशेष कृषि AI सहायक।\n"
+            "आपका कार्य केवल कृषि, फसल प्रबंधन, फसल रोग, मृदा स्वास्थ्य, खाद एवं उर्वरक, सिंचाई, मौसम सुरक्षा और सरकारी कृषि योजनाओं (जैसे PM-KISAN) से जुड़े प्रश्नों का उत्तर देना है।\n"
+            "सख्त नियम:\n"
+            "1. केवल कृषि, फसल, मौसम और किसान योजनाओं से संबंधित प्रश्नों का ही उत्तर दें।\n"
+            "2. यदि प्रश्न कृषि या खेती से बाहर (out of context / out of domain) है (जैसे कोडिंग, फिल्में, खेल, सामान्य ज्ञान, राजनीति आदि), तो केवल यह कहें:\n"
+            "   'क्षमा करें, मुझे इस प्रश्न की जानकारी नहीं है। मैं केवल कृषि, फसल, मौसम और कृषि योजनाओं से संबंधित प्रश्नों का उत्तर दे सकता हूँ।'\n"
+            "3. कृषि से संबंधित उत्तरों को 3-4 संक्षिप्त वाक्यों में दें।"
+            if lang == "hi"
+            else
+            "You are AI Krishak from KrishiMitr - an expert agricultural AI assistant for Indian farmers.\n"
+            "Your domain is strictly limited to agriculture, farming, crop management, plant diseases, soil health, fertilizers, irrigation, weather precautions, livestock, and government farming schemes (like PM-KISAN).\n"
+            "Strict Rules:\n"
+            "1. Answer ONLY questions related to agriculture, farming, crops, soil, weather, fertilizers, and agricultural government schemes.\n"
+            "2. If the user's question is OUT OF CONTEXT or OUT OF DOMAIN (e.g., coding, movies, history, sports, politics, general trivia, non-farming topics), strictly respond:\n"
+            "   'I don't know based on the agricultural context. As AI Krishak, I can only answer questions related to agriculture, crops, weather, soil health, and farming schemes.'\n"
+            "3. Keep valid agricultural answers concise (3-4 sentences) and easy to understand."
+        )
 
-            payload = json.dumps({
-                "model": "llama-3.3-70b-versatile",
-                "messages": [
-                    {"role": "system", "content": sys_prompt},
-                    {"role": "user", "content": query}
-                ],
-                "temperature": 0.5,
-                "max_tokens": 300
-            }).encode("utf-8")
+        models_to_try = ["openai/gpt-oss-20b", "llama-3.3-70b-versatile", "llama3-8b-8192", "qwen/qwen3.8-27b"]
+        headers = {
+            "Authorization": f"Bearer {groq_api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "groq-python/0.9.0"
+        }
 
-            headers = {
-                "Authorization": f"Bearer {groq_api_key}",
-                "Content-Type": "application/json",
-                "User-Agent": "KrishiMitr-AI-Krishak/1.0"
-            }
+        for model_name in models_to_try:
+            try:
+                payload = json.dumps({
+                    "model": model_name,
+                    "messages": [
+                        {"role": "system", "content": sys_prompt},
+                        {"role": "user", "content": query}
+                    ],
+                    "temperature": 0.5,
+                    "max_tokens": 300
+                }).encode("utf-8")
 
-            req_obj = Request("https://api.groq.com/openai/v1/chat/completions", data=payload, headers=headers)
-            with urlopen(req_obj, timeout=12) as response:
-                res_body = json.loads(response.read().decode("utf-8"))
-                bot_reply = res_body["choices"][0]["message"]["content"].strip()
-                return {"response": bot_reply, "source": "groq"}
-
-        except Exception as err:
-            # Fallback gracefully if Groq API call fails or times out
-            pass
+                req_obj = Request("https://api.groq.com/openai/v1/chat/completions", data=payload, headers=headers)
+                with urlopen(req_obj, timeout=10) as response:
+                    res_body = json.loads(response.read().decode("utf-8"))
+                    bot_reply = res_body["choices"][0]["message"]["content"].strip()
+                    return {"response": bot_reply, "source": "groq", "model": model_name}
+            except Exception:
+                continue
 
     # Fallback response if GROQ_API_KEY is not set or network call failed
     fallback_reply = (
