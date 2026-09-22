@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLanguage } from "../context/LanguageContext";
+import { API_ENDPOINTS } from "../config/api";
 
 const QUICK_QUESTIONS = [
   { hi: "गेहूँ में पीला रतुआ कैसे रोकें?", en: "How to stop yellow rust in wheat?" },
@@ -52,7 +53,7 @@ export default function Krishak() {
     }
   }, [messages, open]);
 
-  const handleSend = (textToSend = null) => {
+  const handleSend = async (textToSend = null) => {
     const query = textToSend || input.trim();
     if (!query) return;
 
@@ -62,16 +63,39 @@ export default function Krishak() {
 
     setIsTyping(true);
 
-    setTimeout(() => {
-      let reply =
-        BOT_RESPONSES[query] ||
-        (lang === "hi"
-          ? `आपने पूछा: "${query}"। इसके लिए अपने निकटतम कृषि विकास अधिकारी (ADO) या कृषि विज्ञान केंद्र से संपर्क करें।`
-          : `You asked: "${query}". For specific local guidance, please consult your nearest Krishi Vigyan Kendra.`);
+    // Fast response if exact quick preset match exists
+    if (BOT_RESPONSES[query]) {
+      setTimeout(() => {
+        setMessages((prev) => [...prev, { sender: "bot", text: BOT_RESPONSES[query] }]);
+        setIsTyping(false);
+      }, 400);
+      return;
+    }
+
+    try {
+      const res = await fetch(API_ENDPOINTS.askKrishak, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, lang }),
+      });
+
+      if (!res.ok) throw new Error("Backend API response error");
+
+      const data = await res.json();
+      const reply = data.response;
 
       setMessages((prev) => [...prev, { sender: "bot", text: reply }]);
+    } catch (err) {
+      // Graceful fallback if server offline or network failure
+      const fallbackReply =
+        lang === "hi"
+          ? `आपने पूछा: "${query}"। इसके लिए अपने निकटतम कृषि विकास अधिकारी (ADO) या कृषि विज्ञान केंद्र से संपर्क करें।`
+          : `You asked: "${query}". For specific local guidance, please consult your nearest Krishi Vigyan Kendra.`;
+
+      setMessages((prev) => [...prev, { sender: "bot", text: fallbackReply }]);
+    } finally {
       setIsTyping(false);
-    }, 800);
+    }
   };
 
   return (

@@ -8,6 +8,8 @@ services:
     envVars:
       - key: ALLOWED_ORIGINS
         sync: false
+      - key: GROQ_API_KEY
+        sync: false
 
   # Frontend Static Site
   - type: web
