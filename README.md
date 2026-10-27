@@ -220,3 +220,5 @@ docker-compose up --build
 ## 📜 License
 
 This project is open-source and available under the [MIT License](LICENSE).
+#   K r i s h i - M i t r a  
+ 
